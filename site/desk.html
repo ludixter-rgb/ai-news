@@ -1,0 +1,643 @@
+<title>AI 뉴스 데스크</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<style>
+  :root{
+    --ground:#EFF2F2;
+    --surface:#FFFFFF;
+    --surface-sunk:#E6EBEA;
+    --ink:#15201F;
+    --ink-mid:#445754;
+    --ink-soft:#6E827F;
+    --line:#D3DCDA;
+    --line-soft:#E2E9E8;
+    --accent:#0D7A79;
+    --accent-ink:#FFFFFF;
+    --accent-wash:#E0EFEE;
+    --sig-high:#B0301D;
+    --sig-high-wash:#F8E7E3;
+    --sig-cond:#9A5B06;
+    --sig-cond-wash:#F9EDDC;
+    --ok:#1B6B44;
+    --ok-wash:#E1F0E7;
+    --shadow:0 1px 2px rgba(21,32,31,.05);
+    --r:3px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0D1413;
+      --surface:#151F1E;
+      --surface-sunk:#101918;
+      --ink:#E4EDEB;
+      --ink-mid:#A7BAB7;
+      --ink-soft:#7C908D;
+      --line:#25332F;
+      --line-soft:#1C2827;
+      --accent:#37BFB7;
+      --accent-ink:#08201F;
+      --accent-wash:#12302E;
+      --sig-high:#F08A72;
+      --sig-high-wash:#33201C;
+      --sig-cond:#E0AE5E;
+      --sig-cond-wash:#2E2519;
+      --ok:#66C795;
+      --ok-wash:#162C22;
+      --shadow:0 1px 2px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0D1413;
+    --surface:#151F1E;
+    --surface-sunk:#101918;
+    --ink:#E4EDEB;
+    --ink-mid:#A7BAB7;
+    --ink-soft:#7C908D;
+    --line:#25332F;
+    --line-soft:#1C2827;
+    --accent:#37BFB7;
+    --accent-ink:#08201F;
+    --accent-wash:#12302E;
+    --sig-high:#F08A72;
+    --sig-high-wash:#33201C;
+    --sig-cond:#E0AE5E;
+    --sig-cond-wash:#2E2519;
+    --ok:#66C795;
+    --ok-wash:#162C22;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-size:15px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono","SFMono-Regular",Menlo,monospace;font-variant-numeric:tabular-nums}
+  a{color:inherit}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+  .shell{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+
+  /* ---------- rail ---------- */
+  .rail{
+    border-right:1px solid var(--line);background:var(--surface-sunk);
+    padding:26px 0 20px;display:flex;flex-direction:column;gap:22px;
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
+  .brand{padding:0 20px;display:flex;flex-direction:column;gap:7px}
+  .brand-mark{
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  }
+  .brand-name{font-size:19px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+  .brand-rule{font-size:12.5px;color:var(--ink-soft);line-height:1.5;border-left:2px solid var(--line);padding-left:9px}
+  .rail-head{
+    padding:0 20px;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);
+  }
+  .spool{display:flex;flex-direction:column}
+  .spool-item{
+    display:flex;align-items:baseline;gap:9px;width:100%;text-align:left;
+    padding:8px 20px;border-left:2px solid transparent;color:var(--ink-mid);
+  }
+  .spool-item:hover{background:var(--surface);color:var(--ink)}
+  .spool-item[aria-current="true"]{border-left-color:var(--accent);background:var(--surface);color:var(--ink);font-weight:500}
+  .spool-date{font-family:"IBM Plex Mono",monospace;font-size:12.5px;flex:1}
+  .spool-count{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-soft)}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex:none}
+  .dot.high{background:var(--sig-high)}
+  .dot.cond{background:var(--sig-cond)}
+  .rail-foot{margin-top:auto;padding:0 20px;font-size:11.5px;line-height:1.6;color:var(--ink-soft)}
+  .rail-foot b{font-weight:500;color:var(--ink-mid)}
+
+  /* ---------- day bar ---------- */
+  main{min-width:0;padding:0 0 80px}
+  .daybar{
+    position:sticky;top:0;z-index:5;background:var(--ground);
+    border-bottom:1px solid var(--line);padding:24px 40px 0;
+  }
+  .dayline{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .dayline h1{margin:0;font-size:27px;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+  .window-chip{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;letter-spacing:.04em;
+    color:var(--ink-mid);border:1px solid var(--line);border-radius:2px;padding:2px 7px;
+  }
+  .window-chip.wide{color:var(--sig-cond);border-color:var(--sig-cond);background:var(--sig-cond-wash)}
+  .tally{display:flex;gap:20px;flex-wrap:wrap;margin:14px 0 0;padding:0;list-style:none}
+  .tally li{display:flex;align-items:baseline;gap:7px}
+  .tally .n{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;letter-spacing:-.02em}
+  .tally .k{font-size:12px;color:var(--ink-soft)}
+  .tally .n.high{color:var(--sig-high)}
+  .tally .n.cond{color:var(--sig-cond)}
+  .tally .n.ok{color:var(--ok)}
+  .tabs{display:flex;gap:2px;margin-top:16px}
+  .tab{
+    padding:8px 14px;font-size:13px;color:var(--ink-soft);
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+  }
+  .tab:hover{color:var(--ink)}
+  .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:500}
+  .tab .badge{
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;margin-left:6px;
+    background:var(--surface-sunk);border:1px solid var(--line);border-radius:2px;padding:0 4px;
+  }
+
+  /* ---------- slips ---------- */
+  .sheet{padding:0 40px;max-width:900px}
+  .sec-head{
+    display:flex;align-items:center;gap:12px;margin:34px 0 0;
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);
+  }
+  .sec-head::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+  .slip{padding:22px 0;border-bottom:1px solid var(--line-soft)}
+  .slip.settled{opacity:.6}
+  .slip.approved{opacity:1}
+  .ok-flag{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ok);background:var(--ok-wash);padding:3px 7px;border-radius:2px}
+  .slip.dropped{padding:11px 0}
+  .slip-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+  .level{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;padding:3px 7px;border-radius:2px;
+  }
+  .level.high{background:var(--sig-high-wash);color:var(--sig-high)}
+  .level.cond{background:var(--sig-cond-wash);color:var(--sig-cond)}
+  .svc{font-size:12.5px;font-weight:500;color:var(--ink-mid);letter-spacing:-.005em}
+  .pick-flag{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--accent);background:var(--accent-wash);padding:3px 7px;border-radius:2px;
+  }
+  .slip h3{margin:0 0 10px;font-size:18.5px;font-weight:600;line-height:1.42;letter-spacing:-.015em;text-wrap:balance}
+  .slip.dropped h3{font-size:14px;font-weight:400;color:var(--ink-soft);margin:0}
+  .field{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;margin-top:8px;align-items:baseline}
+  .field dt{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-soft);padding-top:3px;
+  }
+  .field dd{margin:0;font-size:14.5px;color:var(--ink-mid);line-height:1.65;max-width:62ch}
+  .srcs{display:flex;flex-direction:column;gap:4px}
+  .src{font-size:13px;color:var(--ink-mid);text-decoration:none;overflow-wrap:anywhere}
+  .src:hover{color:var(--accent);text-decoration:underline}
+  .src .dom{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-soft);margin-left:6px}
+  .unverified{color:var(--sig-cond);font-size:12.5px}
+
+  .decide{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .seg button{padding:5px 13px;font-size:12.5px;color:var(--ink-soft);border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:none}
+  .seg button:hover{background:var(--surface);color:var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--ink-soft);color:var(--ground);font-weight:500}
+  .seg button.ok[aria-pressed="true"]{background:var(--ok);color:#fff}
+  .pick-btn{
+    padding:5px 11px;font-size:12.5px;color:var(--ink-soft);
+    border:1px solid var(--line);border-radius:var(--r);
+  }
+  .pick-btn:hover{color:var(--ink);background:var(--surface)}
+  .pick-btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+  .slip-date{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-soft);margin-left:auto}
+
+  /* ---------- side lists ---------- */
+  .noted{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .noted li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;font-size:13.5px;color:var(--ink-mid);line-height:1.6}
+  .noted .tick{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-soft);padding-top:3px}
+  .noted .why{color:var(--ink-soft);font-size:12.5px}
+  details.cut{margin-top:14px}
+  details.cut summary{
+    cursor:pointer;font-size:13px;color:var(--ink-soft);list-style:none;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  details.cut summary::-webkit-details-marker{display:none}
+  details.cut summary::before{content:"▸";font-size:10px;transition:transform .15s}
+  details.cut[open] summary::before{transform:rotate(90deg)}
+  details.cut summary:hover{color:var(--ink)}
+
+  /* ---------- states ---------- */
+  .state{padding:64px 40px;max-width:620px}
+  .state h2{margin:0 0 12px;font-size:20px;font-weight:600;letter-spacing:-.015em}
+  .state p{margin:0 0 14px;color:var(--ink-mid);font-size:14.5px;line-height:1.7}
+  .state .steps{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
+  .state .steps li{
+    display:grid;grid-template-columns:26px minmax(0,1fr);gap:12px;
+    padding:13px 0;border-top:1px solid var(--line-soft);font-size:14px;color:var(--ink-mid);
+  }
+  .state .steps li:last-child{border-bottom:1px solid var(--line-soft)}
+  .state .steps .no{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--accent);padding-top:3px}
+  .state .steps b{font-weight:500;color:var(--ink)}
+  kbd{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--surface);
+    border:1px solid var(--line);border-radius:2px;padding:1px 6px;color:var(--ink);
+  }
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+    background:var(--ink);color:var(--ground);font-size:13px;padding:9px 16px;
+    border-radius:var(--r);box-shadow:var(--shadow);z-index:20;
+  }
+  .toast[hidden]{display:none!important}
+
+  @media (max-width:820px){
+    .shell{grid-template-columns:1fr}
+    .rail{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line);padding:20px 0 14px}
+    .spool{flex-direction:row;overflow-x:auto;padding:0 20px 2px;gap:2px;scrollbar-width:thin}
+    .spool-item{border-left:none;border-bottom:2px solid transparent;white-space:nowrap;padding:7px 11px;flex:none}
+    .spool-item[aria-current="true"]{border-left-color:transparent;border-bottom-color:var(--accent)}
+    .rail-head,.rail-foot{padding:0 20px}
+    .rail-foot{margin-top:14px}
+    .daybar{padding:20px 20px 0}
+    .sheet,.state{padding-left:20px;padding-right:20px}
+    .field{grid-template-columns:1fr;gap:2px}
+  }
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand-mark">Daily · KST 08:00</span>
+      <span class="brand-name">AI 뉴스 데스크</span>
+      <span class="brand-rule">일반 이용자가 “뭔가 달라졌네” 할 변화만 올라옵니다</span>
+    </div>
+    <div>
+      <div class="rail-head">조사 기록</div>
+      <nav class="spool" id="spool" aria-label="날짜별 브리핑"></nav>
+    </div>
+    <div class="rail-foot" id="railFoot"></div>
+  </aside>
+
+  <main>
+    <div id="app">
+      <div class="state">
+        <h2>불러오는 중</h2>
+        <p>저장된 브리핑을 확인하고 있습니다.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DOW = ["일","월","화","수","목","금","토"];
+  var LEVELS = { high:{cls:"high", label:"즉시 체감"}, cond:{cls:"cond", label:"조건부"} };
+  var VERDICTS = ["approved","hold","dropped"];
+  var VERDICT_LABEL = { approved:"승인", hold:"보류", dropped:"버림" };
+
+  var state = {
+    db: null, loaded: false,
+    briefs: new Map(),      // date -> brief body
+    decisions: new Map(),   // date -> {items:{id:verdict}, pick:string|null}
+    date: null,
+    view: "day"             // "day" | "queue"
+  };
+
+  var app = document.getElementById("app");
+  var spool = document.getElementById("spool");
+  var railFoot = document.getElementById("railFoot");
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.hidden = true; }, 3200);
+  }
+  function fmtDate(d){
+    var p = String(d).split("-").map(Number);
+    if (p.length !== 3 || p.some(isNaN)) return String(d);
+    var dt = new Date(Date.UTC(p[0], p[1]-1, p[2]));
+    return p[1] + "월 " + p[2] + "일 (" + DOW[dt.getUTCDay()] + ")";
+  }
+  function domain(url){
+    try { return new URL(url).hostname.replace(/^www\./,""); } catch(e){ return ""; }
+  }
+  function levelOf(item){
+    var raw = String(item.level || "").toLowerCase();
+    return (raw === "cond" || raw === "yellow" || raw === "conditional") ? LEVELS.cond : LEVELS.high;
+  }
+  function itemsOf(date){
+    var b = state.briefs.get(date);
+    return (b && Array.isArray(b.items)) ? b.items : [];
+  }
+  function decisionsOf(date){
+    var d = state.decisions.get(date);
+    return { items: (d && d.items) || {}, pick: (d && d.pick) || null };
+  }
+  function verdictOf(date, id){ return decisionsOf(date).items[id] || null; }
+
+  function sortedDates(){
+    return Array.from(state.briefs.keys()).sort().reverse();
+  }
+
+  // ---------- writes ----------
+  function persist(date, next){
+    state.decisions.set(date, next);
+    render();
+    if (!state.db) { toast("저장할 수 없습니다 — 데이터 연결이 없습니다"); return; }
+    state.db.doc("decisions/" + date).set(next).catch(function(e){
+      var code = (e && e.code) || "unknown";
+      toast(code === "resource_exhausted" ? "잠시 뒤 다시 시도해 주세요" : "저장 실패 (" + code + ")");
+    });
+  }
+  function setVerdict(date, id, verdict){
+    var cur = decisionsOf(date);
+    var items = Object.assign({}, cur.items);
+    if (items[id] === verdict) delete items[id]; else items[id] = verdict;
+    var pick = cur.pick;
+    if (items[id] === "dropped" && pick === id) pick = null;
+    persist(date, { items: items, pick: pick, updatedAt: new Date().toISOString() });
+  }
+  function setPick(date, id){
+    var cur = decisionsOf(date);
+    persist(date, {
+      items: Object.assign({}, cur.items),
+      pick: cur.pick === id ? null : id,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  // ---------- render pieces ----------
+  function sourcesHtml(sources){
+    if (!Array.isArray(sources) || !sources.length){
+      return '<span class="unverified">출처 미기재 — 발행 전 확인 필요</span>';
+    }
+    return '<div class="srcs">' + sources.map(function(s){
+      var url = s && s.url ? String(s.url) : "";
+      var label = esc((s && (s.label || s.title)) || url || "출처");
+      var meta = [domain(url), (s && s.date) || ""].filter(Boolean).join(" · ");
+      if (!/^https?:\/\//i.test(url)){
+        return '<span class="src">' + label + (meta ? '<span class="dom">' + esc(meta) + '</span>' : '') + '</span>';
+      }
+      return '<a class="src" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
+        label + '<span class="dom">' + esc(meta) + '</span></a>';
+    }).join("") + '</div>';
+  }
+
+  function slipHtml(item, date, opts){
+    opts = opts || {};
+    var id = String(item.id || "");
+    var lvl = levelOf(item);
+    var verdict = verdictOf(date, id);
+    var picked = decisionsOf(date).pick === id;
+
+    if (verdict === "dropped" && !opts.expandDropped){
+      return '<article class="slip dropped settled">' +
+        '<div class="slip-top">' +
+          '<span class="svc">' + esc(item.service || "") + '</span>' +
+          '<h3>' + esc(item.title || "") + '</h3>' +
+          '<div class="decide" style="margin:0 0 0 auto">' + segHtml(date, id, verdict) + '</div>' +
+        '</div></article>';
+    }
+
+    var fields = "";
+    if (item.changed) fields += '<div class="field"><dt>달라진 것</dt><dd>' + esc(item.changed) + '</dd></div>';
+    if (item.who)     fields += '<div class="field"><dt>누가 겪나</dt><dd>' + esc(item.who) + '</dd></div>';
+    fields += '<div class="field"><dt>출처</dt><dd>' + sourcesHtml(item.sources) + '</dd></div>';
+
+    var cls = verdict === "approved" ? " approved" : (verdict ? " settled" : "");
+    return '<article class="slip' + cls + '">' +
+      '<div class="slip-top">' +
+        '<span class="level ' + lvl.cls + '">' + lvl.label + '</span>' +
+        '<span class="svc">' + esc(item.service || "") + '</span>' +
+        (verdict === "approved" ? '<span class="ok-flag">승인</span>' : '') +
+        (picked ? '<span class="pick-flag">오늘의 한 건</span>' : '') +
+        (opts.showDate ? '<span class="slip-date">' + esc(date) + '</span>' : '') +
+      '</div>' +
+      '<h3>' + esc(item.title || "") + '</h3>' +
+      '<dl style="margin:0">' + fields + '</dl>' +
+      '<div class="decide">' + segHtml(date, id, verdict) +
+        '<button class="pick-btn" type="button" aria-pressed="' + (picked ? "true" : "false") +
+          '" data-act="pick" data-date="' + esc(date) + '" data-id="' + esc(id) + '">★ 오늘의 한 건</button>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function segHtml(date, id, verdict){
+    return '<div class="seg" role="group" aria-label="발행 결정">' + VERDICTS.map(function(v){
+      return '<button type="button" class="' + (v === "approved" ? "ok" : "") + '"' +
+        ' aria-pressed="' + (verdict === v ? "true" : "false") + '"' +
+        ' data-act="verdict" data-verdict="' + v + '" data-date="' + esc(date) + '" data-id="' + esc(id) + '">' +
+        VERDICT_LABEL[v] + '</button>';
+    }).join("") + '</div>';
+  }
+
+  function tallyHtml(date){
+    var items = itemsOf(date);
+    var dec = decisionsOf(date);
+    var high = items.filter(function(i){ return levelOf(i) === LEVELS.high; }).length;
+    var cond = items.length - high;
+    var approved = items.filter(function(i){ return dec.items[i.id] === "approved"; }).length;
+    var open = items.filter(function(i){ return !dec.items[i.id]; }).length;
+    return '<ul class="tally">' +
+      '<li><span class="n high mono">' + high + '</span><span class="k">즉시 체감</span></li>' +
+      '<li><span class="n cond mono">' + cond + '</span><span class="k">조건부</span></li>' +
+      '<li><span class="n ok mono">' + approved + '</span><span class="k">승인</span></li>' +
+      '<li><span class="n mono">' + open + '</span><span class="k">미결</span></li>' +
+    '</ul>';
+  }
+
+  function queueRows(){
+    var rows = [];
+    sortedDates().forEach(function(d){
+      var dec = decisionsOf(d);
+      itemsOf(d).forEach(function(it){
+        if (dec.items[it.id] === "approved") rows.push({ date: d, item: it });
+      });
+    });
+    return rows;
+  }
+
+  function notedHtml(list, kind){
+    if (!Array.isArray(list) || !list.length) return "";
+    return '<ul class="noted">' + list.map(function(e){
+      var text = typeof e === "string" ? e : (e.note || e.title || "");
+      var why = (e && e.reason) || "";
+      return '<li><span class="tick">' + (kind === "cut" ? "—" : "?") + '</span><span>' + esc(text) +
+        (why ? ' <span class="why">' + esc(why) + '</span>' : "") + '</span></li>';
+    }).join("") + '</ul>';
+  }
+
+  // ---------- render ----------
+  function renderSpool(){
+    var dates = sortedDates();
+    if (!dates.length){ spool.innerHTML = ""; return; }
+    spool.innerHTML = dates.map(function(d){
+      var items = itemsOf(d);
+      var high = items.filter(function(i){ return levelOf(i) === LEVELS.high; }).length;
+      return '<button type="button" class="spool-item" data-act="date" data-date="' + esc(d) + '"' +
+        ' aria-current="' + (d === state.date && state.view === "day" ? "true" : "false") + '">' +
+        (high ? '<span class="dot high"></span>' : '<span class="dot cond"></span>') +
+        '<span class="spool-date">' + esc(d.slice(5)) + '</span>' +
+        '<span class="spool-count">' + items.length + '</span></button>';
+    }).join("");
+  }
+
+  function renderFoot(){
+    var n = state.briefs.size;
+    railFoot.innerHTML = n
+      ? '기록 <b>' + n + '일</b> · 승인 <b>' + queueRows().length + '건</b><br>승인한 건이 글감이 됩니다.'
+      : '매일 아침 8시에 조사가 돌고 결과가 여기 쌓입니다.';
+  }
+
+  function renderEmpty(){
+    app.innerHTML =
+      '<div class="state">' +
+        '<h2>아직 들어온 브리핑이 없습니다</h2>' +
+        '<p>이 데스크는 조사 결과를 받아 두는 자리입니다. 매일 아침 8시에 조사가 돌면 ' +
+          '기준을 통과한 변화만 초안으로 여기 쌓이고, 승인한 것만 글감으로 넘어갑니다.</p>' +
+        '<ul class="steps">' +
+          '<li><span class="no mono">01</span><span><b>조사</b> — 챗GPT · 제미나이 · 클로드 · 퍼플렉시티 · 그록을 최근 24시간 기준으로 훑습니다. 걸린 게 없으면 72시간까지 넓힙니다.</span></li>' +
+          '<li><span class="no mono">02</span><span><b>선별</b> — 내일 앱을 열었을 때 화면·결과·요금·한도가 달라지는가. 벤치마크와 로드맵 예고는 여기서 걸립니다.</span></li>' +
+          '<li><span class="no mono">03</span><span><b>결정</b> — 이 화면에서 항목마다 승인 · 보류 · 버림을 찍습니다. 아무것도 자동으로 공개되지 않습니다.</span></li>' +
+          '<li><span class="no mono">04</span><span><b>발행</b> — 승인한 건을 아티클 초안으로 넘깁니다.</span></li>' +
+        '</ul>' +
+        '<p style="margin-top:22px">지금 채우려면 대화창에 <kbd>3번</kbd> 이라고 하면 됩니다.</p>' +
+      '</div>';
+  }
+
+  function renderQueue(){
+    var rows = queueRows();
+    var head =
+      '<div class="daybar">' +
+        '<div class="dayline"><h1>발행 대기</h1>' +
+          '<span class="window-chip mono">' + rows.length + '건 승인됨</span></div>' +
+        tabsHtml() +
+      '</div>';
+    var body = rows.length
+      ? '<div class="sheet">' + rows.map(function(r){
+          return slipHtml(r.item, r.date, { showDate: true, expandDropped: true });
+        }).join("") + '</div>'
+      : '<div class="state"><h2>승인한 항목이 없습니다</h2>' +
+        '<p>날짜별 브리핑에서 <b>승인</b>을 찍으면 여기에 모입니다. 아티클로 쓸 글감 목록입니다.</p></div>';
+    app.innerHTML = head + body;
+  }
+
+  function tabsHtml(){
+    return '<div class="tabs" role="tablist">' +
+      '<button type="button" class="tab" role="tab" data-act="view" data-view="day"' +
+        ' aria-selected="' + (state.view === "day" ? "true" : "false") + '">날짜별 브리핑</button>' +
+      '<button type="button" class="tab" role="tab" data-act="view" data-view="queue"' +
+        ' aria-selected="' + (state.view === "queue" ? "true" : "false") + '">발행 대기' +
+        '<span class="badge mono">' + queueRows().length + '</span></button>' +
+    '</div>';
+  }
+
+  function renderDay(){
+    var date = state.date;
+    var brief = state.briefs.get(date) || {};
+    var items = itemsOf(date);
+    var hours = Number(brief.windowHours || brief.window_hours || 24);
+
+    var head =
+      '<div class="daybar">' +
+        '<div class="dayline">' +
+          '<h1>' + esc(fmtDate(date)) + '</h1>' +
+          '<span class="window-chip mono' + (hours > 24 ? " wide" : "") + '">최근 ' + hours + '시간</span>' +
+        '</div>' +
+        tallyHtml(date) +
+        tabsHtml() +
+      '</div>';
+
+    var body;
+    if (!items.length){
+      body = '<div class="state"><h2>이 날은 조용했습니다</h2>' +
+        '<p>' + esc(brief.note || "72시간까지 넓혀도 기준을 통과한 변화가 없었습니다. 칸을 채우려고 기준을 낮추지 않습니다.") + '</p></div>';
+    } else {
+      var order = { null:0, hold:1, approved:2, dropped:3 };
+      var sorted = items.slice().sort(function(a,b){
+        var av = verdictOf(date, a.id), bv = verdictOf(date, b.id);
+        return (order[av] || 0) - (order[bv] || 0);
+      });
+      body = '<div class="sheet">' +
+        sorted.map(function(it){ return slipHtml(it, date, {}); }).join("");
+
+      if (Array.isArray(brief.checks) && brief.checks.length){
+        body += '<div class="sec-head">확인 필요</div>' + notedHtml(brief.checks, "check");
+      }
+      if (Array.isArray(brief.filtered) && brief.filtered.length){
+        body += '<details class="cut"><summary>걸렀음 ' + brief.filtered.length + '건 — 기준에 못 미친 소식</summary>' +
+          notedHtml(brief.filtered, "cut") + '</details>';
+      }
+      body += '</div>';
+    }
+    app.innerHTML = head + body;
+  }
+
+  function render(){
+    renderSpool();
+    renderFoot();
+    if (!state.loaded) return;
+    if (state.view === "queue") return renderQueue();
+    if (!state.date || !state.briefs.has(state.date)){
+      var ds = sortedDates();
+      if (!ds.length) return renderEmpty();
+      state.date = ds[0];
+    }
+    renderDay();
+  }
+
+  // ---------- events ----------
+  document.addEventListener("click", function(ev){
+    var btn = ev.target.closest("[data-act]");
+    if (!btn) return;
+    var act = btn.getAttribute("data-act");
+    if (act === "date"){ state.date = btn.getAttribute("data-date"); state.view = "day"; render(); }
+    else if (act === "view"){ state.view = btn.getAttribute("data-view"); render(); }
+    else if (act === "verdict"){ setVerdict(btn.getAttribute("data-date"), btn.getAttribute("data-id"), btn.getAttribute("data-verdict")); }
+    else if (act === "pick"){ setPick(btn.getAttribute("data-date"), btn.getAttribute("data-id")); }
+  });
+
+  // ---------- data ----------
+  function offline(){
+    state.loaded = true;
+    app.innerHTML =
+      '<div class="state">' +
+        '<h2>저장된 브리핑을 불러올 수 없습니다</h2>' +
+        '<p>이 화면은 claude.ai에서 열었을 때만 기록을 읽고 씁니다. 다른 곳에서 열었다면 ' +
+          '원래 주소로 다시 들어와 주세요.</p>' +
+      '</div>';
+    renderFoot();
+  }
+
+  function start(){
+    if (!window.claude || typeof window.claude.use !== "function") return offline();
+    window.claude.use("db").then(function(db){
+      if (!db) return offline();
+      state.db = db;
+
+      db.collection("briefs").orderBy("date", "desc").limit(90).onSnapshot(function(snap){
+        state.briefs = new Map();
+        snap.docs.forEach(function(d){
+          var body = d.data() || {};
+          state.briefs.set(body.date || d.id, body);
+        });
+        state.loaded = true;
+        render();
+      }, function(e){ toast("브리핑을 읽지 못했습니다 (" + ((e && e.code) || "unknown") + ")"); });
+
+      db.collection("decisions").limit(90).onSnapshot(function(snap){
+        state.decisions = new Map();
+        snap.docs.forEach(function(d){
+          var body = d.data() || {};
+          state.decisions.set(d.id, { items: body.items || {}, pick: body.pick || null });
+        });
+        if (state.loaded) render();
+      }, function(){ /* 결정 기록이 아직 없을 수 있다 — 조용히 넘어간다 */ });
+    }).catch(offline);
+
+    setTimeout(function(){ if (!state.loaded){ state.loaded = true; render(); } }, 11000);
+  }
+
+  start();
+})();
+</script>

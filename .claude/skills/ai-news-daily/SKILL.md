@@ -102,8 +102,13 @@ description: 승희의 데일리 AI 뉴스 조사. 챗GPT·제미나이·클로�
 
 ## 마무리
 
-브리핑을 `archive/YYYY-MM-DD.md`로 저장한다. 내일 중복 판정의 근거이자, 나중에
-"연결된 소식"을 짚을 때 쓸 재료가 된다.
+**데스크에 올린다.** 브리핑은 대시보드에서 보고 승인한다. Artifact 도구로
+`action: write_db`, `db_op: set`, `collection: briefs`, `doc_id: <한국시간 오늘 날짜>`,
+`url: https://claude.ai/code/artifact/e1825bf6-9eee-49dc-b2f1-46a878c4aded` 에 JSON을 쓴다.
+구조는 `site/schema.md`에 있다. `decisions/` 문서는 건드리지 않는다 — 승인은 사람이 찍는다.
 
-`✍️ 오늘의 한 건`을 승희 님이 고르면 거기서부터는 `ai-release-article` 스킬로 넘어간다.
+같은 내용을 `archive/YYYY-MM-DD.md`로도 저장한다. 내일 중복 판정의 근거이자,
+나중에 "연결된 소식"을 짚을 때 쓸 재료가 된다.
+
+`✍️ 오늘의 한 건`을 승희 님이 고르면 거기서부터 `ai-release-article` 스킬로 넘어간다.
 **이 스킬에서 아티클을 쓰지 않는다.** 여기까지가 조사와 선별이다.

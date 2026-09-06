@@ -76,7 +76,12 @@ API·개발자 전용 변경은 뺀다. 기능이 실제로 이용자 손에 닿
 
 ## 마무리
 
-브리핑을 `archive/YYYY-MM-DD.md`(한국시간 오늘 날짜)로 저장하고 현재 브랜치에 커밋해서 푸시한다.
+**데스크에 올린다.** Artifact 도구로 `action: write_db`, `db_op: set`,
+`collection: briefs`, `doc_id: <한국시간 오늘 날짜>`, `url: https://claude.ai/code/artifact/e1825bf6-9eee-49dc-b2f1-46a878c4aded`
+에 브리핑 JSON을 쓴다. 구조는 레포의 `site/schema.md`. 항목마다 날짜 안에서 고유한 `id`를 붙인다.
+`decisions/` 문서는 절대 건드리지 않는다 — 승인 상태는 사람이 찍는 것이고, 조사가 덮어쓰면 안 된다.
+
+레포가 붙었으면 같은 내용을 `archive/YYYY-MM-DD.md`로도 저장하고 현재 브랜치에 커밋해서 푸시한다.
 대화창에는 브리핑 본문 전체를 그대로 보여준다.
 
 **아티클은 쓰지 않는다.** 조사와 선별까지가 이 작업이다.
