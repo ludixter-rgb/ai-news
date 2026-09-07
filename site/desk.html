@@ -125,6 +125,7 @@
     font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;letter-spacing:.04em;
     color:var(--ink-mid);border:1px solid var(--line);border-radius:2px;padding:2px 7px;
   }
+  .stamp{font-size:11.5px;color:var(--ink-soft);letter-spacing:.01em}
   .window-chip.wide{color:var(--sig-cond);border-color:var(--sig-cond);background:var(--sig-cond-wash)}
   .tally{display:flex;gap:20px;flex-wrap:wrap;margin:14px 0 0;padding:0;list-style:none}
   .tally li{display:flex;align-items:baseline;gap:7px}
@@ -317,6 +318,15 @@
     if (p.length !== 3 || p.some(isNaN)) return String(d);
     var dt = new Date(Date.UTC(p[0], p[1]-1, p[2]));
     return p[1] + "월 " + p[2] + "일 (" + DOW[dt.getUTCDay()] + ")";
+  }
+  function fmtStamp(iso){
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    try {
+      return new Intl.DateTimeFormat("ko-KR", {
+        timeZone:"Asia/Seoul", hour:"2-digit", minute:"2-digit", hour12:false
+      }).format(d);
+    } catch(e){ return ""; }
   }
   function domain(url){
     try { return new URL(url).hostname.replace(/^www\./,""); } catch(e){ return ""; }
@@ -537,12 +547,14 @@
     var brief = state.briefs.get(date) || {};
     var items = itemsOf(date);
     var hours = Number(brief.windowHours || brief.window_hours || 24);
+    var stamp = fmtStamp(brief.generatedAt || brief.generated_at || "");
 
     var head =
       '<div class="daybar">' +
         '<div class="dayline">' +
           '<h1>' + esc(fmtDate(date)) + '</h1>' +
           '<span class="window-chip mono' + (hours > 24 ? " wide" : "") + '">최근 ' + hours + '시간</span>' +
+          (stamp ? '<span class="stamp mono">갱신 ' + esc(stamp) + '</span>' : '') +
         '</div>' +
         tallyHtml(date) +
         tabsHtml() +
