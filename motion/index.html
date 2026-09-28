@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion Study 01</title>
+<style>
+  @font-face { font-family: "Archivo Black"; src: url(fonts/archivo-black-latin-400-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 800; src: url(fonts/inter-latin-800-normal.woff2) format("woff2"); }
+  @font-face { font-family: "JB"; src: url(fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2"); }
+  html, body { margin: 0; height: 100%; background: #000; }
+  body { display: grid; place-items: center; }
+  canvas { display: block; width: 100vw; max-height: 100vh; aspect-ratio: 16 / 9; object-fit: contain; cursor: pointer; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="motion.js"></script>
+</body>
+</html>
